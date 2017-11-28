@@ -2,6 +2,9 @@
 
 COMMAND=$1
 ARGUMENT=$2
+VAR=$3
+
+echo $VAR
 
 
 function install_and_check {
