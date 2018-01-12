@@ -189,8 +189,8 @@ def make_tracks(evt_number       : float,
     return tc
 
 def merge_tracks(tracks    : Sequence[Graph],
-                 vox_size  : np.ndarray,
                  min_nodes : int) -> Sequence[Graph]:
+    vox_size = tracks[0].nodes()[0].size # all voxels have the same size, so we take the first one
     factor = 0.75 # fraction of energy remaining energy after subtraction
     new_voxels_dict = {} # Voxel[x,y,z,0.]: energy
     for t1, t2 in combinations(tracks, 2):
