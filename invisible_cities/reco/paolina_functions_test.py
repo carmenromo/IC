@@ -393,3 +393,29 @@ def test_new_voxels_only_appear_once():
     for t in merged_tracks:
         for v1, v2 in combinations(t.nodes(), 2):
             assert np.any(abs(v1.pos - v2.pos) != approx(0.))
+
+def test_old_voxels_remain():
+    vox_size = np.array([1,1,1],dtype=np.float64)
+    voxel_spec = ((1, 1, 0,     5),
+                  (1, 2, 0,     5),
+                  (1, 4, 0,     5),
+                  (1, 5, 0,     5),
+                  (3, 2, 0,     5),
+                  (4, 2, 0,     5),
+                  )
+    voxels = [Voxel(x,y,z, E, vox_size) for (x,y,z,E) in voxel_spec]
+    tracks  = make_track_graphs(voxels)
+    merged_tracks = merge_tracks(tracks, min_nodes=2)
+
+    list1 = []
+    list2 = []
+
+    for vox in voxels:
+        list1.append(vox.XYZ)
+
+    for t in merged_tracks:
+        for v in t.nodes():
+            list2.append(v.XYZ)
+
+    assert all(x in list2 for x in list1)
+
