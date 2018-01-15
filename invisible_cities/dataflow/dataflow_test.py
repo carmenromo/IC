@@ -497,6 +497,22 @@ def test_slice_raises_ValueError(args):
     with raises(ValueError):
         df.slice(*args)
 
+
+def test_implicit_pipes():
+
+    # 'implicit_pipes' provides a 'pipe' function for each element of a given tuple.
+
+    def add2(x): return df.map(lambda x:x+2)
+
+    the_source = (1,2,3)
+    result = []
+    the_sink = df.sink(result.append)
+
+    df.push(source  = the_source,
+            pipe    = df.pipe(add2(df.implicit_pipes(the_source)), the_sink))
+
+    assert result == [3,4,5]
+
 @mark.xfail
 def test_pipes_must_end_in_a_sink():
     raise NotImplementedError
