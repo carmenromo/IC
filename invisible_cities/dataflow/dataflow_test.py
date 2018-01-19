@@ -513,6 +513,29 @@ def test_implicit_pipes():
 
     assert result == [3,4,5]
 
+
+def test_starmap():
+
+    # 'starmap' breaks down the data tuples into the sequences that compose it,
+    # and as 'map' does, transforms every sequence passing through the pipe by
+    # applying the supplied operation.
+
+    from itertools import starmap
+
+    def the_operation(a,b,c): return a+b+c
+    add3 = df.starmap(the_operation)
+
+    the_source = ((2,3,5),(2,2,2),(0,2,1))
+
+    result = []
+    the_sink = df.sink(result.append)
+
+    df.push(source = the_source,
+            pipe   = add3(the_sink))
+
+    assert result == list(starmap(the_operation, the_source))
+
+
 @mark.xfail
 def test_pipes_must_end_in_a_sink():
     raise NotImplementedError
