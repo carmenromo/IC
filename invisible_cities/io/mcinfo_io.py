@@ -144,6 +144,13 @@ def load_mcsensor_response(file_name: str,
         return read_mcsns_response(h5in, event_range)
 
 
+def load_mcTOFsensor_response(file_name: str,
+                              event_range=(0, int(1e9))) -> Mapping[int, MCParticle]:
+    
+    with tb.open_file(file_name, mode='r') as h5in:
+        return read_mcTOFsns_response(h5in, event_range)
+
+
 def read_mcinfo_evt (mctables: (tb.Table, tb.Table, tb.Table),
                      event_number: int, last_row=0) -> ([tb.Table], [tb.Table]):
     h5extents   = mctables[0]
@@ -314,4 +321,53 @@ def read_mcsns_response(h5f, event_range=(0, 1e9)) ->Mapping[int, Mapping[int, W
     return all_events
 
 
+def read_mcTOFsns_response(h5f, event_range=(0, 1e9)) ->Mapping[int, Mapping[int, Waveform]]:
 
+    h5extents = h5f.root.MC.extents
+    h5tof_waveforms = h5f.root.MC.tof_waveforms
+
+    last_line_of_event = 'last_sns_tof'
+    events_in_file = len(h5extents)
+
+    all_events = {}
+
+    iwvf = 0
+    if event_range[0] > 0:
+        iwvf = h5extents[event_range[0]-1][last_line_of_event] + 1
+
+    for iext in range(*event_range):
+        if iext >= events_in_file:
+            break
+
+        current_event = {}
+
+        iwvf_end = h5extents[iext][last_line_of_event]
+        current_sensor_id = h5tof_waveforms[iwvf]['sensor_id']
+        time_bins = []
+        charges = []
+        while iwvf <= iwvf_end:
+            wvf_row   = h5tof_waveforms[iwvf]
+            sensor_id = wvf_row['sensor_id']
+
+            if sensor_id == current_sensor_id:
+                time_bins.append(wvf_row['time_bin'])
+                charges.  append(wvf_row['charge'])
+            else:
+                bin_width = 5 #bin_width_SiPM  #bin_width_PMT if sensor_id < 1000 else bin_width_SiPM
+                times     = np.array(time_bins) * bin_width
+
+                current_event[current_sensor_id] = Waveform(times, charges, bin_width)
+
+                time_bins = []
+                charges   = []
+                time_bins.append(wvf_row['time_bin'])
+                charges.append(wvf_row['charge'])
+
+                current_sensor_id = sensor_id
+
+            iwvf += 1
+
+        evt_number             = h5extents[iext]['evt_number']
+        all_events[evt_number] = current_event
+
+    return all_events
