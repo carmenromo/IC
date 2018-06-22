@@ -5,6 +5,12 @@ from .  corrections import LifetimeXYCorrection
 from .. io.dst_io   import load_dst
 
 
+def load_rpos(filename, group = "Radius",
+              node  = "f100bins"):
+    dst = load_dst(filename, group, node)
+    return Correction((dst.Ratio.values,), dst.Rpos.values, dst.Uncertainty.values)
+
+
 def load_z_corrections(filename):
     dst = load_dst(filename, "Corrections", "Zcorrections")
     return Correction((dst.z.values,), dst.factor.values, dst.uncertainty.values)
