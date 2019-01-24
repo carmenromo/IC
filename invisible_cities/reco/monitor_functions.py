@@ -8,10 +8,11 @@ from .. database           import load_db             as dbf
 from .. reco               import histogram_functions as histf
 from .. core               import system_of_units     as units
 
-from .. evm .histos        import HistoManager
-from .. io  .pmaps_io      import load_pmaps
-from .. io  .dst_io        import load_dst
-from .. reco.tbl_functions import get_rwf_vectors
+from .. evm .histos                  import HistoManager
+from .. io  .pmaps_io                import load_pmaps
+from .. io  .dst_io                  import load_dst
+from .. reco.tbl_functions           import get_rwf_vectors
+from .. reco.calib_sensors_functions import modes
 
 
 def pmap_bins(config_dict):
@@ -196,7 +197,10 @@ def fill_rwf_var(rwf, var_dict, sensor_type):
     sensor_type    = Type of sensor('PMT' or 'SiPM')
     """
 
-    bls = np.mean(rwf, axis=1)
+    if   sensor_type == 'SiPM':
+        bls = modes(rwf.astype('int16')).flatten()
+    elif sensor_type == 'PMT' :
+        bls = np.mean(rwf, axis=1)
     rms = np.std (rwf, axis=1)
     var_dict[sensor_type + '_Baseline']   .extend(bls)
     var_dict[sensor_type + '_BaselineRMS'].extend(rms)
@@ -222,8 +226,8 @@ def fill_rwf_histos(in_path, config_dict):
             for evt in range(nevt):
                 fill_rwf_var(pmtrwf [evt, :, :n_baseline], var,  "PMT")
                 fill_rwf_var(sipmrwf[evt]                , var, "SiPM")
-
         histo_manager.fill_histograms(var)
+
     return histo_manager
 
 

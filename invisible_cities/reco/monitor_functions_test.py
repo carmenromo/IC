@@ -1,8 +1,7 @@
 import os
-from   collections import defaultdict
-
 import numpy as np
 
+from collections             import defaultdict
 from hypothesis              import given
 from hypothesis              import settings
 from hypothesis.extra.pandas import columns, data_frames
@@ -13,8 +12,10 @@ from .. reco                 import histogram_functions as histf
 from .. database             import load_db             as dbf
 from .. core                 import system_of_units     as units
 
-from .. evm.pmaps_test       import pmaps
-from .. evm.pmaps_test       import sensor_responses
+from .. evm.pmaps_test               import pmaps
+from .. evm.pmaps_test               import sensor_responses
+from .. reco.calib_sensors_functions import modes
+
 
 
 @given(pmaps())
@@ -250,7 +251,7 @@ def test_fill_pmap_histos(ICDATADIR):
 
 
 def test_fill_rwf_var():
-    var_dict = defaultdict(list)
+    var_dict       = defaultdict(list)
     pmt_waveforms  = np.random.uniform(0, 10, size=(  12, 10000))
     sipm_waveforms = np.random.uniform(0, 10, size=(1792, 10000))
     monf.fill_rwf_var( pmt_waveforms, var_dict, "PMT" )
@@ -258,8 +259,8 @@ def test_fill_rwf_var():
 
     assert np.allclose(var_dict['PMT_Baseline']    , np.mean( pmt_waveforms, axis=1))
     assert np.allclose(var_dict['PMT_BaselineRMS'] , np.std ( pmt_waveforms, axis=1))
-    assert np.allclose(var_dict['SiPM_Baseline']   , np.mean(sipm_waveforms, axis=1))
     assert np.allclose(var_dict['SiPM_BaselineRMS'], np.std (sipm_waveforms, axis=1))
+    assert np.allclose(var_dict['SiPM_Baseline']   , modes  (sipm_waveforms.astype('int16')).flatten())
 
 
 def test_rwf_bins():
