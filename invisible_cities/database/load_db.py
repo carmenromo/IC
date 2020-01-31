@@ -53,6 +53,37 @@ order by Active desc, pos.SensorID
     return data
 
 @lru_cache(maxsize=10)
+def DataPMT_err(db_file, run_number=1e5):
+    if run_number == 0:
+        run_number = runNumberForMC
+
+    conn = sqlite3.connect(get_db(db_file))
+
+    sql = '''select pos.SensorID, map.ElecID "ChannelID", Label "PmtID",
+case when msk.SensorID is NULL then 1 else 0 end "Active",
+X, Y, coeff_blr, coeff_c, abs(Centroid) "adc_to_pes", ErrorCentroid, noise_rms, Sigma
+from ChannelPosition as pos INNER JOIN ChannelMapping
+as map ON pos.SensorID = map.SensorID LEFT JOIN
+(select * from PmtNoiseRms where MinRun <= {0} and (MaxRun >= {0} or MaxRun is NULL))
+as noise on map.ElecID = noise.ElecID LEFT JOIN
+(select * from ChannelMask where MinRun <= {0} and {0} <= MaxRun)
+as msk ON pos.SensorID = msk.SensorID LEFT JOIN
+(select * from ChannelGain where  MinRun <= {0} and {0} <= MaxRun)
+as gain ON pos.SensorID = gain.SensorID LEFT JOIN
+(select * from PmtBlr where MinRun <= {0} and (MaxRun >= {0} or MaxRun is NULL))
+as blr ON map.ElecID = blr.ElecID
+where pos.SensorID < 100
+and pos.MinRun <= {0} and {0} <= pos.MaxRun
+and map.MinRun <= {0} and {0} <= map.MaxRun
+and pos.Label LIKE 'PMT%'
+order by Active desc, pos.SensorID
+'''.format(abs(run_number))
+    data = pd.read_sql_query(sql, conn)
+    data.fillna(0, inplace=True)
+    conn.close()
+    return data
+
+@lru_cache(maxsize=10)
 def DataSiPM(db_file, run_number=1e5):
     if run_number == 0:
         run_number = runNumberForMC
